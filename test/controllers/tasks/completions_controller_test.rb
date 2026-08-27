@@ -2,6 +2,10 @@ require "test_helper"
 
 module Tasks
   class CompletionsControllerTest < ActionDispatch::IntegrationTest
+    setup do
+      sign_in_as users(:alice)
+    end
+
     test "POST /tasks/:id/completion marks the task as completed" do
       task = tasks(:due_tomorrow)
 
