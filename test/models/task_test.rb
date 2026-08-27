@@ -32,4 +32,27 @@ class TaskTest < ActiveSupport::TestCase
 
     assert_not_nil task.reload.created_at
   end
+
+  test "complete! stamps completed_at" do
+    task = tasks(:due_tomorrow)
+
+    travel_to Time.zone.local(2026, 8, 27, 12, 0, 0) do
+      task.complete!
+
+      assert_equal Time.zone.local(2026, 8, 27, 12, 0, 0), task.reload.completed_at
+    end
+  end
+
+  test "uncomplete! clears completed_at" do
+    task = tasks(:done)
+
+    task.uncomplete!
+
+    assert_nil task.reload.completed_at
+  end
+
+  test "completed? reflects completed_at presence" do
+    assert tasks(:done).completed?
+    assert_not tasks(:due_tomorrow).completed?
+  end
 end

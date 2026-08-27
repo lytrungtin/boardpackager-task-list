@@ -13,4 +13,12 @@
     <dt>Due</dt>
     <dd><%= @task.due_at.strftime("%b %-d, %Y at %H:%M") %></dd>
   </dl>
+
+  <div class="task-actions">
+    <% if @task.completed? %>
+      <%= button_to "Mark as not completed", task_completion_path(@task), method: :delete %>
+    <% else %>
+      <%= button_to "Mark as completed", task_completion_path(@task) %>
+    <% end %>
+  </div>
 </article>
