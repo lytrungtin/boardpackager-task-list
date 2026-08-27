@@ -133,4 +133,28 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal Task.count, Task.search("").count
     assert_equal Task.count, Task.search(nil).count
   end
+
+  test "accepts allowed files within the size limit" do
+    task = Task.new(title: "With attachments", due_at: 1.day.from_now)
+    task.files.attach(io: file_fixture("sample.pdf").open, filename: "sample.pdf", content_type: "application/pdf")
+    task.files.attach(io: StringIO.new("plain text"), filename: "note.txt", content_type: "text/plain")
+
+    assert task.valid?
+  end
+
+  test "rejects files over 10 MB" do
+    task = Task.new(title: "Big upload", due_at: 1.day.from_now)
+    task.files.attach(io: StringIO.new("x" * (10.megabytes + 1)), filename: "big.pdf", content_type: "application/pdf")
+
+    assert_not task.valid?
+    assert_match(/too large/i, task.errors[:files].join(" "))
+  end
+
+  test "rejects disallowed content types" do
+    task = Task.new(title: "Sketchy upload", due_at: 1.day.from_now)
+    task.files.attach(io: StringIO.new("MZ fake exe"), filename: "virus.exe", content_type: "application/x-msdownload")
+
+    assert_not task.valid?
+    assert_match(/unsupported type/i, task.errors[:files].join(" "))
+  end
 end

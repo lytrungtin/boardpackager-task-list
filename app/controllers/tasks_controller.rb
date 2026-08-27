@@ -59,9 +59,9 @@ class TasksController < ApplicationController
       @task = Current.user.tasks.find(params[:id])
     end
 
-    # Only these three attributes are user-editable (brief item 4);
+    # Title/description/due_at plus uploaded files are user-editable;
     # created_at/completed_at can never be mass-assigned.
     def task_params
-      params.expect(task: [ :title, :description, :due_at ])
+      params.expect(task: [ :title, :description, :due_at, files: [] ])
     end
 end

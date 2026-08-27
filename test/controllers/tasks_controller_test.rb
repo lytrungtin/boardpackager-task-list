@@ -1,6 +1,8 @@
 require "test_helper"
 
 class TasksControllerTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
   setup do
     sign_in_as users(:alice)
   end
@@ -198,5 +200,31 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     assert_match "Overdue elevator fix", response.body
     assert_no_match(/Future elevator quote/, response.body)
+  end
+
+  test "POST /tasks with attachments stores the files" do
+    assert_difference("ActiveStorage::Attachment.count", 1) do
+      post tasks_url, params: {
+        task: {
+          title: "With attachment",
+          due_at: 1.day.from_now,
+          files: [ fixture_file_upload("sample.pdf", "application/pdf") ]
+        }
+      }
+    end
+
+    assert_redirected_to task_url(Task.last)
+    assert_equal "sample.pdf", Task.last.files.first.filename.to_s
+  end
+
+  test "deleting a task purges its attachments" do
+    task = users(:alice).tasks.create!(title: "Doomed", due_at: 1.day.from_now)
+    task.files.attach(io: StringIO.new("bye"), filename: "note.txt", content_type: "text/plain")
+
+    assert_difference("ActiveStorage::Attachment.count", -1) do
+      perform_enqueued_jobs do
+        delete task_url(task)
+      end
+    end
   end
 end
