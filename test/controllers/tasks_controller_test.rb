@@ -50,4 +50,42 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :not_found
   end
+
+  test "GET /tasks/:id/edit renders form with current values" do
+    task = tasks(:due_tomorrow)
+
+    get edit_task_url(task)
+
+    assert_response :success
+    assert_select "input[name='task[title]'][value=?]", task.title
+  end
+
+  test "PATCH /tasks/:id updates editable fields and redirects" do
+    task = tasks(:due_tomorrow)
+
+    patch task_url(task), params: { task: { title: "Updated title", description: "Updated body", due_at: 3.days.from_now } }
+
+    assert_redirected_to task_url(task)
+    assert_equal "Updated title", task.reload.title
+  end
+
+  test "PATCH /tasks/:id with blank title returns 422 and keeps old value" do
+    task = tasks(:due_tomorrow)
+
+    patch task_url(task), params: { task: { title: "" } }
+
+    assert_response :unprocessable_entity
+    assert_equal "Prepare board meeting agenda", task.reload.title
+  end
+
+  test "PATCH /tasks/:id ignores created_at and completed_at params" do
+    task = tasks(:due_tomorrow)
+    original_created_at = task.created_at
+
+    patch task_url(task), params: { task: { title: "Still editable", created_at: 10.years.ago, completed_at: Time.current } }
+
+    assert_equal original_created_at, task.reload.created_at
+    assert_nil task.completed_at
+    assert_equal "Still editable", task.title
+  end
 end

@@ -1,6 +1,7 @@
 class TasksController < ApplicationController
+  before_action :set_task, only: %i[show edit update]
+
   def show
-    @task = Task.find(params[:id])
   end
 
   def new
@@ -17,7 +18,22 @@ class TasksController < ApplicationController
     end
   end
 
+  def edit
+  end
+
+  def update
+    if @task.update(task_params)
+      redirect_to @task, notice: "Task was successfully updated."
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
   private
+
+    def set_task
+      @task = Task.find(params[:id])
+    end
 
     # Only these three attributes are user-editable (brief item 4);
     # created_at/completed_at can never be mass-assigned.
