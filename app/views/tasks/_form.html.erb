@@ -1,0 +1,20 @@
+<%= form_with model: task do |form| %>
+  <div class="field">
+    <%= form.label :title %>
+    <%= form.text_field :title, autofocus: true %>
+  </div>
+
+  <div class="field">
+    <%= form.label :description %>
+    <%= form.text_area :description, rows: 4 %>
+  </div>
+
+  <div class="field">
+    <%= form.label :due_at, "Due at" %>
+    <%= form.datetime_field :due_at %>
+  </div>
+
+  <div class="actions">
+    <%= form.submit %>
+  </div>
+<% end %>

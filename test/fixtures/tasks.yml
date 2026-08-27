@@ -1,0 +1,10 @@
+due_tomorrow:
+  title: Prepare board meeting agenda
+  description: Collect topics from the team
+  due_at: <%= 1.day.from_now %>
+
+done:
+  title: Send signed documents
+  description: Already handled
+  due_at: <%= 2.days.from_now %>
+  completed_at: <%= 1.hour.ago %>

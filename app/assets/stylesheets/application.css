@@ -1,10 +1,55 @@
-/*
- * This is a manifest file that'll be compiled into application.css.
- *
- * With Propshaft, assets are served efficiently without preprocessing steps. You can still include
- * application-wide styles in this file, but keep in mind that CSS precedence will follow the standard
- * cascading order, meaning styles declared later in the document or manifest will override earlier ones,
- * depending on specificity.
- *
- * Consider organizing styles into separate files for maintainability.
- */
+/* Hand-rolled styles — no CSS framework, keeps the 8h budget honest. */
+:root {
+  --ink: #1f2430;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --accent: #2563eb;
+  --danger: #b91c1c;
+  --ok: #15803d;
+  --bg: #f8fafc;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+
+.container { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+
+h1 { font-size: 1.6rem; margin: 0.5rem 0 1rem; }
+
+a { color: var(--accent); }
+
+.flash { padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; }
+.flash-notice { background: #ecfdf5; color: var(--ok); }
+.flash-alert { background: #fef2f2; color: var(--danger); }
+
+.field { margin-bottom: 14px; }
+.field label { display: block; font-weight: 600; margin-bottom: 4px; }
+.field input[type="text"],
+.field input[type="datetime-local"],
+.field textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  background: white;
+}
+
+.actions { margin-top: 18px; }
+
+input[type="submit"], button {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
