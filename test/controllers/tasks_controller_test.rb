@@ -1,6 +1,10 @@
 require "test_helper"
 
 class TasksControllerTest < ActionDispatch::IntegrationTest
+  setup do
+    sign_in_as users(:alice)
+  end
+
   test "GET /tasks/new renders form" do
     get new_task_url
 
@@ -111,8 +115,8 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
 
   test "GET / lists tasks sorted by due date ascending" do
     Task.delete_all
-    later = Task.create!(title: "Zebra due later", due_at: 5.days.from_now)
-    sooner = Task.create!(title: "Alpha due sooner", due_at: 1.day.from_now)
+    later = users(:alice).tasks.create!(title: "Zebra due later", due_at: 5.days.from_now)
+    sooner = users(:alice).tasks.create!(title: "Alpha due sooner", due_at: 1.day.from_now)
 
     get root_url
 
@@ -122,8 +126,8 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
 
   test "GET / marks overdue tasks with a badge" do
     Task.delete_all
-    Task.create!(title: "Very late task", due_at: 2.days.ago)
-    Task.create!(title: "Future task", due_at: 2.days.from_now)
+    users(:alice).tasks.create!(title: "Very late task", due_at: 2.days.ago)
+    users(:alice).tasks.create!(title: "Future task", due_at: 2.days.from_now)
 
     get root_url
 
@@ -132,8 +136,8 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
 
   test "GET /?filter=due_today hides tasks due after today" do
     Task.delete_all
-    today = Task.create!(title: "Finish today task", due_at: Time.zone.now.end_of_day - 1.minute)
-    Task.create!(title: "Next week task", due_at: 7.days.from_now)
+    today = users(:alice).tasks.create!(title: "Finish today task", due_at: Time.zone.now.end_of_day - 1.minute)
+    users(:alice).tasks.create!(title: "Next week task", due_at: 7.days.from_now)
 
     get root_url(filter: "due_today")
 
@@ -146,5 +150,24 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     get root_url(filter: "destroy_all")
 
     assert_response :success
+  end
+
+  test "GET / lists only the signed-in user's tasks" do
+    get root_url
+
+    assert_match tasks(:due_tomorrow).title, response.body
+    assert_no_match(/#{Regexp.escape(tasks(:bob_task).title)}/, response.body)
+  end
+
+  test "opening another user's task returns 404" do
+    get task_url(tasks(:bob_task))
+
+    assert_response :not_found
+  end
+
+  test "created tasks belong to the signed-in user" do
+    post tasks_url, params: { task: { title: "Mine", due_at: 1.day.from_now } }
+
+    assert_equal users(:alice), Task.last.user
   end
 end

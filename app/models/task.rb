@@ -1,4 +1,7 @@
 class Task < ApplicationRecord
+  # Optional while pre-auth rows exist; see AddUserToTasks migration note.
+  belongs_to :user, optional: true
+
   validates :title, presence: true
   validates :due_at, presence: true
 
