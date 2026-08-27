@@ -1,5 +1,5 @@
 class TasksController < ApplicationController
-  before_action :set_task, only: %i[show edit update]
+  before_action :set_task, only: %i[show edit update destroy]
 
   def show
   end
@@ -27,6 +27,14 @@ class TasksController < ApplicationController
     else
       render :edit, status: :unprocessable_entity
     end
+  end
+
+  def destroy
+    @task.destroy!
+
+    # The task list page lands with item 6; until then the natural place
+    # to land after deleting is the new-task form.
+    redirect_to new_task_url, status: :see_other, notice: "Task was successfully deleted."
   end
 
   private

@@ -21,5 +21,7 @@
     <% else %>
       <%= button_to "Mark as completed", task_completion_path(@task) %>
     <% end %>
+    <%= button_to "Delete", @task, method: :delete, class: "button-danger",
+          data: { turbo_confirm: "Delete this task permanently?" } %>
   </div>
 </article>

@@ -88,4 +88,24 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     assert_nil task.completed_at
     assert_equal "Still editable", task.title
   end
+
+  test "DELETE /tasks/:id removes the task and redirects" do
+    task = tasks(:due_tomorrow)
+
+    assert_difference("Task.count", -1) do
+      delete task_url(task)
+    end
+
+    assert_response :see_other
+    assert_redirected_to new_task_url
+  end
+
+  test "deleted task is gone afterwards" do
+    task = tasks(:due_tomorrow)
+
+    delete task_url(task)
+    get task_url(task)
+
+    assert_response :not_found
+  end
 end
