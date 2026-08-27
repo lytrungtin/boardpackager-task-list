@@ -188,4 +188,15 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     assert_match tasks(:due_tomorrow).title, response.body
     assert_match tasks(:done).title, response.body
   end
+
+  test "GET / with q searches within the active filter" do
+    users(:alice).tasks.create!(title: "Overdue elevator fix", due_at: 2.days.ago)
+    users(:alice).tasks.create!(title: "Future elevator quote", due_at: 5.days.from_now)
+
+    get root_url(filter: "overdue", q: "elevator")
+
+    assert_response :success
+    assert_match "Overdue elevator fix", response.body
+    assert_no_match(/Future elevator quote/, response.body)
+  end
 end

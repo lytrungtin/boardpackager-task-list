@@ -107,4 +107,30 @@ class TaskTest < ActiveSupport::TestCase
     assert_includes Task.active.to_a, tasks(:due_tomorrow)
     assert_not_includes Task.active.to_a, tasks(:done)
   end
+
+  test "search matches title and description case-insensitively" do
+    Task.delete_all
+    by_title = Task.create!(title: "Fix ELEVATOR button", due_at: 1.day.from_now)
+    by_description = Task.create!(title: "Lobby work", description: "elevator inspection paperwork", due_at: 2.days.from_now)
+    Task.create!(title: "Unrelated", due_at: 3.days.from_now)
+
+    results = Task.search("elevator").to_a
+
+    assert_includes results, by_title
+    assert_includes results, by_description
+    assert_equal 2, results.size
+  end
+
+  test "search treats SQL wildcards as literals" do
+    Task.delete_all
+    literal = Task.create!(title: "Discount is 0% this month", due_at: 1.day.from_now)
+    Task.create!(title: "Other task", due_at: 1.day.from_now)
+
+    assert_equal [ literal ], Task.search("0%").to_a
+  end
+
+  test "blank search returns everything" do
+    assert_equal Task.count, Task.search("").count
+    assert_equal Task.count, Task.search(nil).count
+  end
 end

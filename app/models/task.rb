@@ -16,6 +16,16 @@ class Task < ApplicationRecord
   scope :completed, -> { where.not(completed_at: nil) }
   scope :active, -> { where(completed_at: nil) }
 
+  # Wildcards typed by users (%_) are escaped so they match literally.
+  # ILIKE keeps matching case-insensitive; it is PostgreSQL-specific, which
+  # is acceptable because Postgres is the only database this app targets.
+  scope :search, ->(query) {
+    next all if query.blank?
+
+    term = "%#{sanitize_sql_like(query.strip)}%"
+    where("title ILIKE :term OR description ILIKE :term", term: term)
+  }
+
   # completed_at doubles as the completion flag and the audit trail:
   # nil = open, timestamp = when the task was finished.
   def complete! = update!(completed_at: Time.current)

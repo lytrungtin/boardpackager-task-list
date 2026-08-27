@@ -13,6 +13,8 @@ class TasksController < ApplicationController
   def index
     @tasks = Current.user.tasks.ordered
     @tasks = @tasks.public_send(FILTERS[params[:filter]]) if FILTERS.key?(params[:filter])
+    # Search composes with whichever filter is active.
+    @tasks = @tasks.search(params[:q])
   end
 
   def show

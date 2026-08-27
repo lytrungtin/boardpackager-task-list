@@ -13,6 +13,12 @@
   <%= link_to "Due today", tasks_path(filter: "due_today"), class: ["pill", ("active" if params[:filter] == "due_today")] %>
 </nav>
 
+<%= form_with url: tasks_path, method: :get, class: "search-form" do |form| %>
+  <%= form.hidden_field :filter, value: params[:filter] %>
+  <%= form.search_field :q, value: params[:q], placeholder: "Search title or description\u2026", "aria-label": "Search tasks" %>
+  <%= form.submit "Search" %>
+<% end %>
+
 <% if @tasks.any? %>
   <ul class="task-list">
     <% @tasks.each do |task| %>
@@ -31,5 +37,5 @@
     <% end %>
   </ul>
 <% else %>
-  <p class="empty-state">No tasks here. Create one or switch filters.</p>
+  <p class="empty-state">No tasks here. Create one, clear the search, or switch filters.</p>
 <% end %>

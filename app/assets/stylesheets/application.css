@@ -145,3 +145,14 @@ input[type="submit"], button {
 .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .app-brand { font-weight: 700; color: var(--ink); text-decoration: none; }
 .button-quiet { background: white; color: var(--muted); }
+
+/* Search (extra) */
+.search-form { display: flex; gap: 8px; margin-bottom: 16px; }
+.search-form input[type="search"] {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  background: white;
+}
