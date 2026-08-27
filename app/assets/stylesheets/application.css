@@ -32,6 +32,8 @@ a { color: var(--accent); }
 .field { margin-bottom: 14px; }
 .field label { display: block; font-weight: 600; margin-bottom: 4px; }
 .field input[type="text"],
+.field input[type="email"],
+.field input[type="password"],
 .field input[type="datetime-local"],
 .field textarea {
   width: 100%;
@@ -124,3 +126,22 @@ input[type="submit"], button {
 }
 .button-danger { background: var(--danger); }
 .button-small { padding: 4px 10px; font-size: 0.85rem; }
+
+/* Filter pills (extra) */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: white;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.pill.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+/* App header */
+.app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.app-brand { font-weight: 700; color: var(--ink); text-decoration: none; }
+.button-quiet { background: white; color: var(--muted); }

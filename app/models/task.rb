@@ -13,6 +13,8 @@ class Task < ApplicationRecord
   # "Due by end of today" includes tasks that are already overdue — they are
   # still due by the end of today.
   scope :due_today, -> { where(due_at: ..Time.zone.now.end_of_day) }
+  scope :completed, -> { where.not(completed_at: nil) }
+  scope :active, -> { where(completed_at: nil) }
 
   # completed_at doubles as the completion flag and the audit trail:
   # nil = open, timestamp = when the task was finished.

@@ -97,4 +97,14 @@ class TaskTest < ActiveSupport::TestCase
     assert_includes results, late
     assert_equal 2, results.size
   end
+
+  test "completed scope returns only completed tasks" do
+    assert_includes Task.completed.to_a, tasks(:done)
+    assert_not_includes Task.completed.to_a, tasks(:due_tomorrow)
+  end
+
+  test "active scope returns only open tasks" do
+    assert_includes Task.active.to_a, tasks(:due_tomorrow)
+    assert_not_includes Task.active.to_a, tasks(:done)
+  end
 end

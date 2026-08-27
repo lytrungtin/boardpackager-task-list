@@ -1,10 +1,18 @@
 class TasksController < ApplicationController
   before_action :set_task, only: %i[show edit update destroy]
 
+  # Filters are looked up in a whitelist; anything else falls back to "all".
+  # Params can therefore never call arbitrary model methods.
+  FILTERS = {
+    "active" => :active,
+    "completed" => :completed,
+    "overdue" => :overdue,
+    "due_today" => :due_today
+  }.freeze
+
   def index
     @tasks = Current.user.tasks.ordered
-    # A proper whitelist arrives with the filters story; keep it simple now.
-    @tasks = @tasks.due_today if params[:filter] == "due_today"
+    @tasks = @tasks.public_send(FILTERS[params[:filter]]) if FILTERS.key?(params[:filter])
   end
 
   def show

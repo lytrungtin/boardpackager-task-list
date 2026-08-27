@@ -146,12 +146,6 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     assert_no_match(/Next week task/, response.body)
   end
 
-  test "GET / with an unknown filter falls back to all tasks" do
-    get root_url(filter: "destroy_all")
-
-    assert_response :success
-  end
-
   test "GET / lists only the signed-in user's tasks" do
     get root_url
 
@@ -169,5 +163,29 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     post tasks_url, params: { task: { title: "Mine", due_at: 1.day.from_now } }
 
     assert_equal users(:alice), Task.last.user
+  end
+
+  test "GET /?filter=completed lists only completed tasks" do
+    get root_url(filter: "completed")
+
+    assert_match tasks(:done).title, response.body
+    assert_no_match(/#{Regexp.escape(tasks(:due_tomorrow).title)}/, response.body)
+  end
+
+  test "GET /?filter=overdue lists only overdue tasks" do
+    overdue = users(:alice).tasks.create!(title: "Missed deadline item", due_at: 2.days.ago)
+
+    get root_url(filter: "overdue")
+
+    assert_match overdue.title, response.body
+    assert_no_match(/#{Regexp.escape(tasks(:due_tomorrow).title)}/, response.body)
+  end
+
+  test "GET / with an unknown filter safely falls back to all tasks" do
+    get root_url(filter: "destroy_all")
+
+    assert_response :success
+    assert_match tasks(:due_tomorrow).title, response.body
+    assert_match tasks(:done).title, response.body
   end
 end
