@@ -1,7 +1,21 @@
 <%= form_with model: task do |form| %>
+  <% if task.errors.any? %>
+    <div class="error-box" role="alert">
+      <h2><%= pluralize(task.errors.count, "error") %> prevented this task from being saved:</h2>
+      <ul>
+        <% task.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
   <div class="field">
     <%= form.label :title %>
     <%= form.text_field :title, autofocus: true %>
+    <% task.errors.full_messages_for(:title).each do |message| %>
+      <p class="field-error"><%= message %></p>
+    <% end %>
   </div>
 
   <div class="field">
@@ -12,6 +26,9 @@
   <div class="field">
     <%= form.label :due_at, "Due at" %>
     <%= form.datetime_field :due_at %>
+    <% task.errors.full_messages_for(:due_at).each do |message| %>
+      <p class="field-error"><%= message %></p>
+    <% end %>
   </div>
 
   <div class="actions">
