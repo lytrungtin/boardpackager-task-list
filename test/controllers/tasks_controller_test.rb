@@ -32,4 +32,22 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     assert_select "textarea", text: /Keep this text/
     assert_select ".field-error", text: "Due at can't be blank"
   end
+
+  test "GET /tasks/:id shows all task fields" do
+    task = tasks(:due_tomorrow)
+
+    get task_url(task)
+
+    assert_response :success
+    assert_select "h1", text: task.title
+    assert_match task.description, response.body
+    assert_match task.created_at.strftime("%b %-d, %Y at %H:%M"), response.body
+    assert_match task.due_at.strftime("%b %-d, %Y at %H:%M"), response.body
+  end
+
+  test "GET /tasks/:id for a missing task returns 404" do
+    get task_url(id: 999_999)
+
+    assert_response :not_found
+  end
 end
