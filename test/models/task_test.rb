@@ -63,4 +63,25 @@ class TaskTest < ActiveSupport::TestCase
 
     assert_equal [ sooner, later ], Task.ordered.to_a
   end
+
+  test "overdue scope returns only past-due incomplete tasks" do
+    Task.delete_all
+    overdue = Task.create!(title: "Late", due_at: 1.hour.ago)
+    Task.create!(title: "Late but done", due_at: 1.hour.ago, completed_at: 30.minutes.ago)
+    Task.create!(title: "Future", due_at: 1.day.from_now)
+
+    assert_equal [ overdue ], Task.overdue.to_a
+  end
+
+  test "overdue? matches the scope logic" do
+    task = tasks(:due_tomorrow)
+
+    assert_not task.overdue?
+
+    travel_to 2.days.from_now do
+      assert task.overdue?
+    end
+
+    assert_not tasks(:done).overdue?
+  end
 end

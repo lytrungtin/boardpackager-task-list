@@ -8,10 +8,16 @@
 <% if @tasks.any? %>
   <ul class="task-list">
     <% @tasks.each do |task| %>
-      <li class="task-row">
+      <li class="task-row <%= "completed" if task.completed? %>">
         <div class="task-row-main">
           <%= link_to task.title, task, class: "task-title" %>
           <p class="task-due">Due <%= task.due_at.strftime("%b %-d, %Y at %H:%M") %></p>
+        </div>
+        <div class="task-row-side">
+          <%= render "status_badge", task: task %>
+          <% unless task.completed? %>
+            <%= button_to "Done", task_completion_path(task), class: "button-small" %>
+          <% end %>
         </div>
       </li>
     <% end %>

@@ -39,7 +39,7 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     get task_url(task)
 
     assert_response :success
-    assert_select "h1", text: task.title
+    assert_select "h1", text: /#{Regexp.escape(task.title)}/
     assert_match task.description, response.body
     assert_match task.created_at.strftime("%b %-d, %Y at %H:%M"), response.body
     assert_match task.due_at.strftime("%b %-d, %Y at %H:%M"), response.body
@@ -118,5 +118,15 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     assert_operator response.body.index(sooner.title), :<, response.body.index(later.title)
+  end
+
+  test "GET / marks overdue tasks with a badge" do
+    Task.delete_all
+    Task.create!(title: "Very late task", due_at: 2.days.ago)
+    Task.create!(title: "Future task", due_at: 2.days.from_now)
+
+    get root_url
+
+    assert_select ".badge-overdue", count: 1
   end
 end

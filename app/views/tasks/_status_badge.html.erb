@@ -1,0 +1,5 @@
+<% if task.completed? %>
+  <span class="badge badge-completed">Completed</span>
+<% elsif task.overdue? %>
+  <span class="badge badge-overdue">Overdue</span>
+<% end %>
