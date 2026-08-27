@@ -3,6 +3,8 @@ class TasksController < ApplicationController
 
   def index
     @tasks = Task.ordered
+    # A proper whitelist arrives with the filters story; keep it simple now.
+    @tasks = @tasks.due_today if params[:filter] == "due_today"
   end
 
   def show

@@ -21,7 +21,9 @@ module App
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
+    # "Due by end of today" (brief item 6) is evaluated in the team's local
+    # wall-clock time; the database keeps storing UTC.
+    config.time_zone = "Hanoi"
     # config.eager_load_paths << Rails.root.join("extras")
   end
 end

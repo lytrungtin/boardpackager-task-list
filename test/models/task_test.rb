@@ -84,4 +84,17 @@ class TaskTest < ActiveSupport::TestCase
 
     assert_not tasks(:done).overdue?
   end
+
+  test "due_today includes everything due before end of today, even overdue" do
+    Task.delete_all
+    just_in_time = Task.create!(title: "Just in time", due_at: Time.zone.now.end_of_day - 1.minute)
+    late = Task.create!(title: "Late", due_at: 1.day.ago)
+    Task.create!(title: "Tomorrow", due_at: Time.zone.now.end_of_day + 1.hour)
+
+    results = Task.due_today.to_a
+
+    assert_includes results, just_in_time
+    assert_includes results, late
+    assert_equal 2, results.size
+  end
 end

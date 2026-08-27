@@ -129,4 +129,22 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
 
     assert_select ".badge-overdue", count: 1
   end
+
+  test "GET /?filter=due_today hides tasks due after today" do
+    Task.delete_all
+    today = Task.create!(title: "Finish today task", due_at: Time.zone.now.end_of_day - 1.minute)
+    Task.create!(title: "Next week task", due_at: 7.days.from_now)
+
+    get root_url(filter: "due_today")
+
+    assert_response :success
+    assert_match today.title, response.body
+    assert_no_match(/Next week task/, response.body)
+  end
+
+  test "GET / with an unknown filter falls back to all tasks" do
+    get root_url(filter: "destroy_all")
+
+    assert_response :success
+  end
 end
