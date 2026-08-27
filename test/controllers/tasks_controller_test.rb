@@ -89,7 +89,7 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Still editable", task.title
   end
 
-  test "DELETE /tasks/:id removes the task and redirects" do
+  test "DELETE /tasks/:id removes the task and redirects to the list" do
     task = tasks(:due_tomorrow)
 
     assert_difference("Task.count", -1) do
@@ -97,7 +97,7 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_response :see_other
-    assert_redirected_to new_task_url
+    assert_redirected_to tasks_url
   end
 
   test "deleted task is gone afterwards" do
@@ -107,5 +107,16 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
     get task_url(task)
 
     assert_response :not_found
+  end
+
+  test "GET / lists tasks sorted by due date ascending" do
+    Task.delete_all
+    later = Task.create!(title: "Zebra due later", due_at: 5.days.from_now)
+    sooner = Task.create!(title: "Alpha due sooner", due_at: 1.day.from_now)
+
+    get root_url
+
+    assert_response :success
+    assert_operator response.body.index(sooner.title), :<, response.body.index(later.title)
   end
 end

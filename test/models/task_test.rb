@@ -55,4 +55,12 @@ class TaskTest < ActiveSupport::TestCase
     assert tasks(:done).completed?
     assert_not tasks(:due_tomorrow).completed?
   end
+
+  test "ordered sorts by due_at ascending" do
+    Task.delete_all
+    later = Task.create!(title: "Later", due_at: 3.days.from_now)
+    sooner = Task.create!(title: "Sooner", due_at: 1.day.from_now)
+
+    assert_equal [ sooner, later ], Task.ordered.to_a
+  end
 end
