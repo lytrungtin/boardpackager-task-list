@@ -42,21 +42,35 @@ class Task < ApplicationRecord
 
   def completed? = completed_at.present?
 
-  def overdue? = !completed? && due_at.past?
+  # due_at is required, but guard anyway: an unsaved record has no due_at and
+  # rendering a status badge for one should not raise.
+  def overdue? = !completed? && due_at.present? && due_at.past?
 
   private
 
     # Active Storage ships no built-in validations, so size and content type
-    # are guarded manually on every save.
+    # are guarded manually.
     def acceptable_files
-      files.each do |file|
-        if file.byte_size > MAX_FILE_SIZE
-          errors.add(:files, "#{file.filename} is too large (max 10 MB)")
+      newly_attached_blobs.each do |blob|
+        if blob.byte_size > MAX_FILE_SIZE
+          errors.add(:files, "#{blob.filename} is too large (max 10 MB)")
         end
 
-        unless ALLOWED_CONTENT_TYPES.include?(file.content_type)
-          errors.add(:files, "#{file.filename} has an unsupported type")
+        unless ALLOWED_CONTENT_TYPES.include?(blob.content_type)
+          errors.add(:files, "#{blob.filename} has an unsupported type")
         end
       end
+    end
+
+    # Only the attachments being added in this save. The previous version walked
+    # every attachment on every save, so editing a title re-checked blobs that
+    # were already stored and accepted.
+    #
+    # Active Storage builds these blobs by running the bytes through Marcel, so
+    # blob.content_type reflects what the file actually looks like rather than
+    # only what the client claimed. Marcel still falls back to the declared type
+    # when the bytes carry no recognisable signature; see the README.
+    def newly_attached_blobs
+      attachment_changes["files"]&.blobs || []
     end
 end

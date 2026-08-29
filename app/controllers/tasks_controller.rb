@@ -55,8 +55,9 @@ class TasksController < ApplicationController
 
     # Scope the query instead of loading-then-authorizing: other users' tasks
     # are indistinguishable from missing ones (404), which leaks nothing.
+    # Attachments are preloaded because the detail view lists them.
     def set_task
-      @task = Current.user.tasks.find(params[:id])
+      @task = Current.user.tasks.with_attached_files.find(params[:id])
     end
 
     # Title/description/due_at plus uploaded files are user-editable;
