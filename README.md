@@ -25,7 +25,7 @@ Sign in as **alice@example.com / password** (or bob@example.com / password). Use
 ## Running the tests
 
 ```bash
-docker compose run --rm web bash -c "RAILS_ENV=test bin/rails db:prepare && bin/rails test"
+docker compose run --rm web bash -c "RAILS_ENV=test DATABASE_URL=postgres://app:password@db:5432/app_test bin/rails db:test:prepare test"
 ```
 
 ## Feature coverage
@@ -50,6 +50,9 @@ The git history is deliberately incremental — one focused commit per story, te
 - **Completion is a timestamp, not a boolean.** `completed_at: datetime` doubles as the flag (`nil` = open) and the audit trail of *when* the task was finished. “Overdue” is derived (`!completed? && due_at.past?`), never stored, so it can’t go stale.
 - **“Due by end of today” includes overdue tasks** — they are still due by the end of today. The boundary is `Time.zone.now.end_of_day` with `config.time_zone` set explicitly, so “today” follows the app timezone instead of UTC. It defaults to UTC and is overridable with `APP_TIME_ZONE` (for example `APP_TIME_ZONE="Asia/Singapore"`), so you can see the boundary in your own day rather than in mine.
 - **Server-rendered ERB + Hotwire, no SPA.** For an 8-hour budget, Rails’ default stack gives CRUD, forms, validation display and confirmation dialogs with almost no client code.
+- **Optimistic locking on edits.** `tasks.lock_version` catches the two-tab overwrite case: the second save gets a 409 instead of silently replacing the first. Completion toggles use the same guard.
+- **Demo seeds never run in production.** `db/seeds.rb` returns early when `Rails.env.production?`, and production `database.yml` sets `seeds: false`, so `db:prepare` on a fresh production database cannot create demo accounts.
+- **Explicit per-environment databases.** Compose and CI set `DATABASE_URL` with an explicit database name instead of relying on the Postgres default, so tests never share the development database.
 - **Hard delete** (no soft-delete/paranoia) — the brief asks for delete; recoverability wasn’t requested and would add schema noise.
 - **Authentication mirrors the Rails 8 auth generator**: `has_secure_password`, a `sessions` table with one row per sign-in, a signed permanent cookie, and rate-limited sign-in attempts. Password reset was cut deliberately (no mailer in scope).
 - **Authorization by scoping, not by checking**: every query goes through `Current.user.tasks`, so another user’s task is indistinguishable from a missing one (404) and nothing leaks. `tasks.user_id` is nullable because rows created before auth existed stay valid; with more time: backfill, then tighten to `null: false`.
@@ -81,3 +84,7 @@ The git history is deliberately incremental — one focused commit per story, te
 | Filters + search | 1.0h |
 | File attachments | 1.0h |
 | Seeds, polish, README | 0.5h |
+
+## License
+
+MIT. See [LICENSE](LICENSE).
