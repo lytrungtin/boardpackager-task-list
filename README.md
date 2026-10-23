@@ -1,89 +1,104 @@
-# BoardPackager Take-Home — Task List
+# BoardPackager
 
-A task list application built with **Ruby on Rails 8.1** running in a **Docker Compose** environment (Rails + PostgreSQL), per the take-home brief. All six required items are implemented, plus all four extra items.
+BoardPackager is a task list for board packagers and property managers. It keeps the day-to-day work of a building in one place: what is due, what is late, what is done, and who owns it.
 
-## Quick start
+Built with Ruby on Rails 8.1, PostgreSQL, Hotwire, and Active Storage. Runs locally with Docker Compose.
+
+## Features
+
+- Create, edit, complete, reopen, and delete tasks.
+- Due dates with an overdue badge and a "due today" view.
+- Status filters for active, completed, overdue, and due today.
+- Search across task title and description.
+- File attachments: PNG, JPEG, PDF, and text files up to 10 MB.
+- Per-user task lists with session-based authentication.
+- Optimistic locking so two tabs cannot silently overwrite each other.
+- Server-rendered ERB and Hotwire. No SPA, no separate API client.
+
+## Stack
+
+- Ruby 3.3.12
+- Rails 8.1
+- PostgreSQL 16
+- Hotwire: Turbo and Stimulus
+- Propshaft, import maps
+- Active Storage
+- Docker Compose for development
+- Minitest for tests
+
+## Getting started
 
 ```bash
 docker compose build
 docker compose up
-# first boot runs db:prepare (creates DB + runs migrations) automatically
 ```
 
-Then open http://localhost:3000.
+The first boot creates the database, runs migrations, and starts the app at http://localhost:3000.
 
-The app timezone defaults to UTC. To review “due by end of today” in your own timezone, set `APP_TIME_ZONE` on the `web` service, for example `APP_TIME_ZONE="America/New_York"`.
-
-Seed demo data (2 users, 5 tasks covering upcoming / due today / overdue / completed):
+Seed demo data:
 
 ```bash
 docker compose run --rm web bin/rails db:seed
 ```
 
-Sign in as **alice@example.com / password** (or bob@example.com / password). Users are created via seeds or the Rails console per the brief — there is no sign-up flow and no admin account.
+Sign in as `alice@example.com` or `bob@example.com`, password `password`. There is no sign-up flow. Users are created through seeds or the Rails console.
 
-## Running the tests
+Set the app timezone if you want "today" to follow your local day:
 
 ```bash
-docker compose run --rm web bash -c "RAILS_ENV=test DATABASE_URL=postgres://app:password@db:5432/app_test bin/rails db:test:prepare test"
+APP_TIME_ZONE="Asia/Singapore" docker compose up
 ```
 
-## Feature coverage
+The default is UTC.
 
-| # | Requirement | Where |
-|---|-------------|-------|
-| 1 | Create a task (title, description, created time, due time) | `feat: create task` + `feat: task validations` |
-| 2 | Open a single task | `feat: task detail page` |
-| 3 | Mark a task completed | `feat: mark task completed` |
-| 4 | Edit title / description / date to complete | `feat: edit task` |
-| 5 | Delete a task | `feat: delete task` |
-| 6 | List all tasks: sorted by due date asc, overdue marked, “due by end of today” limit | `feat: task list sorted by due date` + `feat: overdue badge` + `feat: due-today filter` |
-| E1 | Upload supporting files | `feat: file attachments (extra)` |
-| E2 | More filters for the list page | `feat: status filters for list (extra)` |
-| E3 | Text search for the list page | `feat: text search (extra)` |
-| E4 | User-specific tasks with authentication | `feat: authentication with rails 8 generator (extra)` + `feat: user-scoped tasks (extra)` |
+## Tests
 
-The git history is deliberately incremental — one focused commit per story, tests included in the same commit as the behavior they cover.
+```bash
+docker compose run --rm web bash -c "RAILS_ENV=test DATABASE_URL=postgres://app:***@db:5432/app_test bin/rails db:test:prepare test"
+```
 
-## Architecture & key decisions
+The suite covers models, controllers, authentication, user scoping, search escaping, attachments, and optimistic locking.
 
-- **Completion is a timestamp, not a boolean.** `completed_at: datetime` doubles as the flag (`nil` = open) and the audit trail of *when* the task was finished. “Overdue” is derived (`!completed? && due_at.past?`), never stored, so it can’t go stale.
-- **“Due by end of today” includes overdue tasks** — they are still due by the end of today. The boundary is `Time.zone.now.end_of_day` with `config.time_zone` set explicitly, so “today” follows the app timezone instead of UTC. It defaults to UTC and is overridable with `APP_TIME_ZONE` (for example `APP_TIME_ZONE="Asia/Singapore"`), so you can see the boundary in your own day rather than in mine.
-- **Server-rendered ERB + Hotwire, no SPA.** For an 8-hour budget, Rails’ default stack gives CRUD, forms, validation display and confirmation dialogs with almost no client code.
-- **Optimistic locking on edits.** `tasks.lock_version` catches the two-tab overwrite case: the second save gets a 409 instead of silently replacing the first. Completion toggles use the same guard.
-- **Demo seeds never run in production.** `db/seeds.rb` returns early when `Rails.env.production?`, and production `database.yml` sets `seeds: false`, so `db:prepare` on a fresh production database cannot create demo accounts.
-- **Explicit per-environment databases.** Compose and CI set `DATABASE_URL` with an explicit database name instead of relying on the Postgres default, so tests never share the development database.
-- **Hard delete** (no soft-delete/paranoia) — the brief asks for delete; recoverability wasn’t requested and would add schema noise.
-- **Authentication mirrors the Rails 8 auth generator**: `has_secure_password`, a `sessions` table with one row per sign-in, a signed permanent cookie, and rate-limited sign-in attempts. Password reset was cut deliberately (no mailer in scope).
-- **Authorization by scoping, not by checking**: every query goes through `Current.user.tasks`, so another user’s task is indistinguishable from a missing one (404) and nothing leaks. `tasks.user_id` is nullable because rows created before auth existed stay valid; with more time: backfill, then tighten to `null: false`.
-- **Filters are whitelisted** in `TasksController::FILTERS`; unknown values fall back to “all”, so params can never call arbitrary scopes.
-- **Search** uses `ILIKE` with `sanitize_sql_like` (user-typed `%`/`_` match literally). `ILIKE` is PostgreSQL-specific — acceptable because Postgres is the only target database.
-- **Attachments** use Active Storage (disk service) with manual size/type validation (≤10 MB; png/jpeg/pdf/txt) since Active Storage ships no built-in validations. Blobs are purged in the background (`dependent: :purge_later`). Only the attachments added in the current save are validated, so editing a title does not re-read blobs that were already accepted. Active Storage identifies each blob from its bytes with Marcel, so a renamed file with a faked `Content-Type` is rejected. The remaining gap is a file whose bytes carry no recognisable signature, where Marcel falls back to the declared type.
-- **Schema is expressed as plain migrations** (including the Active Storage tables) so the whole history is reviewable commit by commit.
+## How it works
 
-## Notes for reviewers
+### Tasks
 
-- `Gemfile.lock` and `db/schema.rb` are both checked in and match the migrations, so a fresh `docker compose up` needs no extra steps.
+A task has a title, optional description, due date, optional completion time, and optional attachments. Tasks belong to a user.
 
-## What I’d do with more time
+`completed_at` is a timestamp, not a boolean. `nil` means the task is open, and any value records when it was finished. Overdue is derived at read time (`due_at` in the past and not completed), so it can never go stale.
 
-- Backfill `tasks.user_id` and tighten to `null: false`.
-- Pagination on the list page; system tests (Capybara) for the happy paths.
-- Trigram index (`pg_trgm`) for search: the current `%term%` pattern cannot use a btree index.
-- Re-add the system-test CI job together with the first Capybara test. It was removed because there were no system tests for it to run.
-- Direct uploads + antivirus scanning hook for attachments.
-- Password reset via mailer.
+The "due today" view includes tasks that are already overdue. They are still due by the end of today.
 
-## Approximate time log (~8h)
+### Authorization
 
-| Block | Time |
-|-------|------|
-| Docker/Rails skeleton & CI setup | 0.5h |
-| Items 1–6 (TDD: model → request → views) | 3.5h |
-| Auth + user scoping | 1.5h |
-| Filters + search | 1.0h |
-| File attachments | 1.0h |
-| Seeds, polish, README | 0.5h |
+Every task query goes through `Current.user.tasks`. Another user's task is indistinguishable from a missing one, so the app returns 404 instead of leaking whether the task exists.
+
+### Concurrency
+
+Task edits use optimistic locking. The form sends `lock_version`, and a stale save returns 409 with a reload prompt instead of overwriting the first writer.
+
+### Attachments
+
+Active Storage stores files on disk in development. The model validates size and content type, and only newly attached blobs are checked, so editing a title does not re-read files that were already accepted. Blobs are purged in the background when a task is deleted.
+
+### Database
+
+Tasks are indexed by `(user_id, due_at)` for user-scoped due-date queries. Search uses PostgreSQL `ILIKE` with escaped wildcards.
+
+## Configuration
+
+- `APP_TIME_ZONE`: app timezone, default `UTC`.
+- `DATABASE_URL`: database connection. Compose points development at `app_development` and tests at `app_test`.
+- Production uses `APP_DATABASE_PASSWORD` and disables demo seeds.
+
+## Roadmap
+
+- Pagination for the task list.
+- `pg_trgm` index for search.
+- Backfill `tasks.user_id` and make it non-null.
+- System tests for the main flows.
+- Direct uploads and antivirus scanning for attachments.
+- Password reset.
 
 ## License
 
