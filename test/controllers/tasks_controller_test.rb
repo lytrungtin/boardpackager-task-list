@@ -227,4 +227,15 @@ class TasksControllerTest < ActionDispatch::IntegrationTest
       end
     end
   end
+
+  test "PATCH /tasks/:id with a stale lock_version returns 409 and keeps the first save" do
+    task = tasks(:due_tomorrow)
+    stale = Task.find(task.id)
+    task.update!(title: "First writer")
+
+    patch task_url(stale), params: { task: { title: "Second writer", lock_version: stale.lock_version } }
+
+    assert_response :conflict
+    assert_equal "First writer", task.reload.title
+  end
 end

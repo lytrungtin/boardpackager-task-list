@@ -43,6 +43,10 @@ class TasksController < ApplicationController
     else
       render :edit, status: :unprocessable_entity
     end
+  rescue ActiveRecord::StaleObjectError
+    @task.reload
+    flash.now[:alert] = "This task was updated by someone else. Please review your changes and save again."
+    render :edit, status: :conflict
   end
 
   def destroy
@@ -63,6 +67,6 @@ class TasksController < ApplicationController
     # Title/description/due_at plus uploaded files are user-editable;
     # created_at/completed_at can never be mass-assigned.
     def task_params
-      params.expect(task: [ :title, :description, :due_at, files: [] ])
+      params.expect(task: [ :title, :description, :due_at, :lock_version, files: [] ])
     end
 end
